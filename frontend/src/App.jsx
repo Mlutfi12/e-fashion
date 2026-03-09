@@ -1,11 +1,24 @@
-import { useState, createContext, useContext } from 'react'
+import { useState, createContext, useContext, useEffect } from 'react'
 import { Routes, Route, Link, useLocation, useParams, useNavigate } from 'react-router-dom'
-import { ShoppingBag, Menu, X, Search, Heart, Star, ArrowRight, Instagram, Twitter, Facebook, Mail, Phone, MapPin, ChevronRight, Minus, Plus, Trash2 } from 'lucide-react'
+import { ShoppingBag, Menu, X, Search, Heart, Star, ArrowRight, Instagram, Twitter, Facebook, Mail, Phone, MapPin, ChevronRight, Minus, Plus, Trash2, Check, ZoomIn, Share2, ArrowLeft } from 'lucide-react'
 
 // Cart Context
 const CartContext = createContext()
 
 const useCart = () => useContext(CartContext)
+
+// Sample Review Data
+const productReviews = {
+  1: [
+    { id: 1, user: 'Sarah M.', rating: 5, date: '2026-03-01', title: 'Absolutely stunning!', content: 'This dress exceeded my expectations. The silk is luxurious and the fit is perfect. Received so many compliments at the gala!', helpful: 24 },
+    { id: 2, user: 'Emma L.', rating: 5, date: '2026-02-28', title: 'Worth every penny', content: 'Beautiful craftsmanship. The draping is elegant and flattering. True to size.', helpful: 18 },
+    { id: 3, user: 'Jessica R.', rating: 4, date: '2026-02-25', title: 'Gorgeous but runs slightly large', content: 'Stunning dress! I ordered my usual size M but could have gone with S. Still keeping it because it\'s beautiful.', helpful: 12 },
+  ],
+  2: [
+    { id: 1, user: 'Michelle K.', rating: 5, date: '2026-03-02', title: 'Best coat I\'ve ever owned', content: 'The cashmere blend is so soft and warm. Perfect for winter. The tailored fit is very flattering.', helpful: 31 },
+    { id: 2, user: 'Anna P.', rating: 5, date: '2026-02-20', title: 'Luxury quality', content: 'This coat feels like it should cost twice as much. Excellent quality and the camel color is gorgeous.', helpful: 22 },
+  ],
+}
 
 // Sample Data
 const products = [
@@ -20,6 +33,7 @@ const products = [
       'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=600',
       'https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=600',
       'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=600',
+      'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=600',
     ],
     description: 'Elegant silk evening dress perfect for special occasions. Features a flattering silhouette with delicate draping and a timeless design that exudes sophistication.',
     sizes: ['XS', 'S', 'M', 'L', 'XL'],
@@ -598,7 +612,103 @@ function ShopPage() {
   )
 }
 
-// Product Detail Page
+// Image Gallery Modal
+function ImageGalleryModal({ images, onClose }) {
+  const [currentIndex, setCurrentIndex] = useState(0)
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'ArrowLeft') setCurrentIndex(prev => (prev > 0 ? prev - 1 : images.length - 1))
+      if (e.key === 'ArrowRight') setCurrentIndex(prev => (prev < images.length - 1 ? prev + 1 : 0))
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [images.length, onClose])
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center" onClick={onClose}>
+      <button onClick={onClose} className="absolute top-6 right-6 text-white hover:text-gray-300 z-10">
+        <X className="w-8 h-8" />
+      </button>
+      
+      <button
+        onClick={(e) => { e.stopPropagation(); setCurrentIndex(prev => (prev > 0 ? prev - 1 : images.length - 1)) }}
+        className="absolute left-6 text-white hover:text-gray-300"
+      >
+        <ArrowLeft className="w-8 h-8" />
+      </button>
+      
+      <div className="max-w-5xl max-h-screen p-8" onClick={(e) => e.stopPropagation()}>
+        <img
+          src={images[currentIndex]}
+          alt=""
+          className="max-h-[80vh] w-auto object-contain"
+        />
+        <div className="flex justify-center gap-2 mt-6">
+          {images.map((_, index) => (
+            <button
+              key={index}
+              onClick={(e) => { e.stopPropagation(); setCurrentIndex(index) }}
+              className={`w-3 h-3 rounded-full transition-colors ${
+                index === currentIndex ? 'bg-white' : 'bg-gray-600'
+              }`}
+            />
+          ))}
+        </div>
+        <p className="text-white text-center mt-4 text-sm">
+          {currentIndex + 1} / {images.length}
+        </p>
+      </div>
+      
+      <button
+        onClick={(e) => { e.stopPropagation(); setCurrentIndex(prev => (prev < images.length - 1 ? prev + 1 : 0)) }}
+        className="absolute right-6 text-white hover:text-gray-300"
+      >
+        <ChevronRight className="w-8 h-8" />
+      </button>
+    </div>
+  )
+}
+
+// Review Card Component
+function ReviewCard({ review }) {
+  const [helpful, setHelpful] = useState(false)
+  
+  return (
+    <div className="border-b border-gray-100 py-6 last:border-0">
+      <div className="flex items-start justify-between mb-3">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <div className="flex">
+              {[...Array(5)].map((_, i) => (
+                <Star
+                  key={i}
+                  className={`w-4 h-4 ${
+                    i < review.rating ? 'text-fashion-gold fill-fashion-gold' : 'text-gray-300'
+                  }`}
+                />
+              ))}
+            </div>
+            <span className="font-medium text-fashion-black">{review.title}</span>
+          </div>
+          <p className="text-sm text-gray-500">{review.user} • {review.date}</p>
+        </div>
+      </div>
+      <p className="text-gray-600 text-sm leading-relaxed mb-3">{review.content}</p>
+      <button
+        onClick={() => setHelpful(!helpful)}
+        className={`text-sm transition-colors ${
+          helpful ? 'text-fashion-black' : 'text-gray-400 hover:text-fashion-black'
+        }`}
+      >
+        👍 {helpful ? 'Helpful' : 'Was this helpful?'} {helpful ? `(${review.helpful + 1})` : `(${review.helpful})`}
+      </button>
+    </div>
+  )
+}
+
+// Product Detail Page (Enhanced)
 function ProductDetailPage() {
   const { id } = useParams()
   const { addToCart } = useCart()
@@ -607,8 +717,17 @@ function ProductDetailPage() {
   const [selectedSize, setSelectedSize] = useState('')
   const [selectedColor, setSelectedColor] = useState('')
   const [quantity, setQuantity] = useState(1)
+  const [showGallery, setShowGallery] = useState(false)
+  const [addedToCart, setAddedToCart] = useState(false)
+  const [activeTab, setActiveTab] = useState('reviews')
 
   const product = products.find(p => p.id === parseInt(id))
+  const reviews = productReviews[id] || []
+  const relatedProducts = products.filter(p => p.category === product?.category && p.id !== product?.id).slice(0, 4)
+
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [id])
 
   if (!product) {
     return (
@@ -623,26 +742,82 @@ function ProductDetailPage() {
     )
   }
 
+  const handleAddToCart = () => {
+    if (selectedSize && selectedColor) {
+      for (let i = 0; i < quantity; i++) {
+        addToCart(product)
+      }
+      setAddedToCart(true)
+      setTimeout(() => setAddedToCart(false), 2000)
+    } else {
+      alert('Please select a size and color')
+    }
+  }
+
+  const colorMap = {
+    'Black': '#1a1a1a',
+    'Navy': '#1e3a5f',
+    'Burgundy': '#800020',
+    'Camel': '#c19a6b',
+    'Gray': '#808080',
+    'Brown': '#8b4513',
+    'Tan': '#d2b48c',
+    'Gold': '#ffd700',
+    'Silver': '#c0c0c0',
+    'Rose Gold': '#e8b4b8',
+    'Charcoal': '#36454f',
+    'Cream': '#fffdd0',
+    'Beige': '#f5f5dc',
+  }
+
   return (
-    <div className="pt-20 min-h-screen">
+    <div className="pt-20 min-h-screen bg-white">
+      {/* Breadcrumb */}
+      <div className="bg-gray-50 border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <nav className="flex items-center gap-2 text-sm text-gray-500">
+            <Link to="/" className="hover:text-fashion-black transition-colors">Home</Link>
+            <ChevronRight className="w-4 h-4" />
+            <Link to="/shop" className="hover:text-fashion-black transition-colors">Shop</Link>
+            <ChevronRight className="w-4 h-4" />
+            <Link to={`/shop?category=${product.category}`} className="hover:text-fashion-black transition-colors">
+              {product.category}
+            </Link>
+            <ChevronRight className="w-4 h-4" />
+            <span className="text-fashion-black">{product.name}</span>
+          </nav>
+        </div>
+      </div>
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* Images */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-16">
+          {/* Enhanced Image Gallery */}
           <div className="space-y-4">
-            <div className="aspect-[3/4] bg-gray-100 overflow-hidden rounded-lg">
+            <div className="relative aspect-[3/4] bg-gray-100 overflow-hidden rounded-xl group">
               <img
                 src={product.images[selectedImage]}
                 alt={product.name}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
               />
+              <button
+                onClick={() => setShowGallery(true)}
+                className="absolute top-4 right-4 w-10 h-10 bg-white/90 backdrop-blur rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-white"
+              >
+                <ZoomIn className="w-5 h-5 text-fashion-black" />
+              </button>
+              <button className="absolute top-4 left-4 w-10 h-10 bg-white/90 backdrop-blur rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-white">
+                <Heart className="w-5 h-5 text-fashion-black" />
+              </button>
             </div>
-            <div className="flex gap-4">
+            <div className="flex gap-3 overflow-x-auto pb-2">
               {product.images.map((image, index) => (
                 <button
                   key={index}
                   onClick={() => setSelectedImage(index)}
-                  className={`w-24 h-24 overflow-hidden rounded-lg border-2 transition-colors ${
-                    selectedImage === index ? 'border-fashion-black' : 'border-transparent'
+                  className={`flex-shrink-0 w-20 h-24 overflow-hidden rounded-lg border-2 transition-all ${
+                    selectedImage === index
+                      ? 'border-fashion-black ring-2 ring-fashion-black/20'
+                      : 'border-transparent hover:border-gray-300'
                   }`}
                 >
                   <img src={image} alt="" className="w-full h-full object-cover" />
@@ -651,18 +826,21 @@ function ProductDetailPage() {
             </div>
           </div>
 
-          {/* Product Info */}
+          {/* Enhanced Product Info */}
           <div className="lg:py-8">
-            <div className="mb-2 flex items-center gap-2">
-              <span className="px-3 py-1 bg-fashion-light text-fashion-black text-xs font-medium">
+            <div className="mb-4 flex items-center gap-3">
+              <span className="px-3 py-1 bg-fashion-light text-fashion-black text-xs font-medium rounded">
                 {product.category}
               </span>
               {product.new && (
-                <span className="px-3 py-1 bg-fashion-gold text-white text-xs font-medium">NEW</span>
+                <span className="px-3 py-1 bg-fashion-gold text-white text-xs font-medium rounded">NEW ARRIVAL</span>
+              )}
+              {product.sale && (
+                <span className="px-3 py-1 bg-red-500 text-white text-xs font-medium rounded">SALE</span>
               )}
             </div>
 
-            <h1 className="font-display text-4xl font-bold text-fashion-black mb-4">
+            <h1 className="font-display text-4xl md:text-5xl font-bold text-fashion-black mb-4">
               {product.name}
             </h1>
 
@@ -682,24 +860,33 @@ function ProductDetailPage() {
               <span className="text-gray-600 text-sm">
                 {product.rating} ({product.reviews} reviews)
               </span>
+              <span className="text-gray-300">|</span>
+              <button className="text-fashion-black text-sm font-medium hover:underline">
+                Write a review
+              </button>
             </div>
 
             <div className="flex items-center gap-4 mb-8">
-              <span className="text-3xl font-medium text-fashion-black">${product.price}</span>
+              <span className="text-4xl font-medium text-fashion-black">${product.price}</span>
               {product.originalPrice && (
-                <span className="text-xl text-gray-400 line-through">${product.originalPrice}</span>
+                <>
+                  <span className="text-2xl text-gray-400 line-through">${product.originalPrice}</span>
+                  <span className="px-3 py-1 bg-red-100 text-red-600 text-sm font-medium rounded">
+                    Save ${product.originalPrice - product.price}
+                  </span>
+                </>
               )}
             </div>
 
-            <p className="text-gray-600 leading-relaxed mb-8">
+            <p className="text-gray-600 leading-relaxed mb-8 text-lg">
               {product.description}
             </p>
 
             {/* Size Selection */}
-            <div className="mb-6">
-              <div className="flex justify-between mb-3">
-                <span className="font-medium text-fashion-black">Size</span>
-                <button className="text-sm text-gray-500 hover:text-fashion-black underline">
+            <div className="mb-8">
+              <div className="flex justify-between items-center mb-4">
+                <span className="font-medium text-fashion-black text-lg">Size</span>
+                <button className="text-sm text-fashion-gold hover:underline font-medium">
                   Size Guide
                 </button>
               </div>
@@ -708,9 +895,9 @@ function ProductDetailPage() {
                   <button
                     key={size}
                     onClick={() => setSelectedSize(size)}
-                    className={`px-6 py-3 border-2 transition-colors ${
+                    className={`min-w-[80px] px-6 py-4 border-2 rounded-lg font-medium transition-all ${
                       selectedSize === size
-                        ? 'border-fashion-black bg-fashion-black text-white'
+                        ? 'border-fashion-black bg-fashion-black text-white scale-105'
                         : 'border-gray-200 hover:border-fashion-black'
                     }`}
                   >
@@ -722,19 +909,25 @@ function ProductDetailPage() {
 
             {/* Color Selection */}
             <div className="mb-8">
-              <span className="font-medium text-fashion-black mb-3 block">Color</span>
-              <div className="flex gap-3">
+              <span className="font-medium text-fashion-black text-lg mb-4 block">Color</span>
+              <div className="flex gap-3 flex-wrap">
                 {product.colors.map(color => (
                   <button
                     key={color}
                     onClick={() => setSelectedColor(color)}
-                    className={`px-6 py-3 border-2 transition-colors ${
+                    className={`px-6 py-4 border-2 rounded-lg font-medium transition-all ${
                       selectedColor === color
-                        ? 'border-fashion-black'
+                        ? 'border-fashion-black ring-2 ring-fashion-black/20'
                         : 'border-gray-200 hover:border-fashion-black'
                     }`}
                   >
-                    {color}
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-4 h-4 rounded-full border border-gray-300"
+                        style={{ backgroundColor: colorMap[color] || color.toLowerCase() }}
+                      />
+                      {color}
+                    </div>
                   </button>
                 ))}
               </div>
@@ -742,51 +935,187 @@ function ProductDetailPage() {
 
             {/* Quantity & Add to Cart */}
             <div className="flex gap-4 mb-8">
-              <div className="flex items-center border-2 border-gray-200">
+              <div className="flex items-center border-2 border-gray-200 rounded-lg">
                 <button
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="px-4 py-4 hover:bg-gray-100 transition-colors"
+                  className="px-5 py-4 hover:bg-gray-100 transition-colors rounded-l-lg"
                 >
-                  <Minus className="w-4 h-4" />
+                  <Minus className="w-5 h-5" />
                 </button>
-                <span className="px-6 py-4 font-medium">{quantity}</span>
+                <span className="px-6 py-4 font-medium text-lg min-w-[60px] text-center">{quantity}</span>
                 <button
                   onClick={() => setQuantity(quantity + 1)}
-                  className="px-4 py-4 hover:bg-gray-100 transition-colors"
+                  className="px-5 py-4 hover:bg-gray-100 transition-colors rounded-r-lg"
                 >
-                  <Plus className="w-4 h-4" />
+                  <Plus className="w-5 h-5" />
                 </button>
               </div>
               <button
-                onClick={() => {
-                  if (selectedSize && selectedColor) {
-                    for (let i = 0; i < quantity; i++) {
-                      addToCart(product)
-                    }
-                  } else {
-                    alert('Please select a size and color')
-                  }
-                }}
-                className="flex-1 btn-primary"
+                onClick={handleAddToCart}
+                disabled={addedToCart}
+                className={`flex-1 py-4 px-8 rounded-lg font-medium text-lg transition-all transform ${
+                  addedToCart
+                    ? 'bg-green-500 text-white scale-105'
+                    : 'bg-fashion-black text-white hover:bg-fashion-gray hover:scale-105'
+                }`}
               >
-                Add to Cart
+                {addedToCart ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Check className="w-6 h-6" /> Added to Cart!
+                  </span>
+                ) : (
+                  'Add to Cart'
+                )}
+              </button>
+            </div>
+
+            {/* Additional Actions */}
+            <div className="flex gap-4 mb-8">
+              <button className="flex items-center gap-2 text-gray-600 hover:text-fashion-black transition-colors">
+                <Share2 className="w-5 h-5" />
+                Share
+              </button>
+              <button className="flex items-center gap-2 text-gray-600 hover:text-fashion-black transition-colors">
+                <Heart className="w-5 h-5" />
+                Add to Wishlist
               </button>
             </div>
 
             {/* Additional Info */}
-            <div className="border-t pt-6 space-y-4 text-sm text-gray-600">
-              <div className="flex items-center gap-3">
-                <ShoppingBag className="w-5 h-5" />
-                <span>Free shipping on orders over $200</span>
+            <div className="border-t pt-6 space-y-4 text-sm">
+              <div className="flex items-center gap-3 text-gray-600">
+                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <ShoppingBag className="w-5 h-5 text-green-600" />
+                </div>
+                <div>
+                  <p className="font-medium text-fashion-black">Free Shipping</p>
+                  <p>On orders over $200</p>
+                </div>
               </div>
-              <div className="flex items-center gap-3">
-                <Trash2 className="w-5 h-5" />
-                <span>Easy 30-day returns</span>
+              <div className="flex items-center gap-3 text-gray-600">
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Trash2 className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="font-medium text-fashion-black">Easy Returns</p>
+                  <p>30-day return policy</p>
+                </div>
               </div>
             </div>
           </div>
         </div>
+
+        {/* Tabs Section */}
+        <div className="border-t mb-16">
+          <div className="flex gap-8 border-b">
+            <button
+              onClick={() => setActiveTab('reviews')}
+              className={`py-4 font-medium transition-colors relative ${
+                activeTab === 'reviews' ? 'text-fashion-black' : 'text-gray-400 hover:text-fashion-black'
+              }`}
+            >
+              Reviews ({reviews.length})
+              {activeTab === 'reviews' && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-fashion-black" />
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab('details')}
+              className={`py-4 font-medium transition-colors relative ${
+                activeTab === 'details' ? 'text-fashion-black' : 'text-gray-400 hover:text-fashion-black'
+              }`}
+            >
+              Product Details
+              {activeTab === 'details' && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-fashion-black" />
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab('shipping')}
+              className={`py-4 font-medium transition-colors relative ${
+                activeTab === 'shipping' ? 'text-fashion-black' : 'text-gray-400 hover:text-fashion-black'
+              }`}
+            >
+              Shipping & Returns
+              {activeTab === 'shipping' && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-fashion-black" />
+              )}
+            </button>
+          </div>
+
+          <div className="py-8">
+            {activeTab === 'reviews' && (
+              <div className="max-w-3xl">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-2xl font-bold text-fashion-black">Customer Reviews</h3>
+                  <button className="px-6 py-3 bg-fashion-black text-white rounded-lg font-medium hover:bg-fashion-gray transition-colors">
+                    Write a Review
+                  </button>
+                </div>
+                {reviews.length > 0 ? (
+                  <div>
+                    {reviews.map(review => (
+                      <ReviewCard key={review.id} review={review} />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-center py-8">No reviews yet. Be the first to review!</p>
+                )}
+              </div>
+            )}
+            {activeTab === 'details' && (
+              <div className="max-w-3xl prose prose-lg">
+                <h3 className="text-2xl font-bold text-fashion-black mb-4">Product Details</h3>
+                <ul className="space-y-3 text-gray-600">
+                  <li>Premium quality materials</li>
+                  <li>Crafted with attention to detail</li>
+                  <li>True to size fit</li>
+                  <li>Model is 5'9" wearing size S</li>
+                  <li>Care instructions: Dry clean only</li>
+                  <li>Imported</li>
+                </ul>
+              </div>
+            )}
+            {activeTab === 'shipping' && (
+              <div className="max-w-3xl">
+                <h3 className="text-2xl font-bold text-fashion-black mb-4">Shipping & Returns</h3>
+                <div className="space-y-4 text-gray-600">
+                  <p><strong>Standard Shipping:</strong> 5-7 business days ($9.99)</p>
+                  <p><strong>Express Shipping:</strong> 2-3 business days ($19.99)</p>
+                  <p><strong>Free Shipping:</strong> On orders over $200</p>
+                  <p><strong>Returns:</strong> Free returns within 30 days of purchase</p>
+                  <p><strong>Exchanges:</strong> Free exchanges for size or color</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Related Products */}
+        {relatedProducts.length > 0 && (
+          <div>
+            <h2 className="font-display text-3xl font-bold text-fashion-black mb-8">
+              You May Also Like
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+              {relatedProducts.map((product, index) => (
+                <div
+                  key={product.id}
+                  style={{ animationDelay: `${index * 50}ms` }}
+                  className="animate-fade-in"
+                >
+                  <ProductCard product={product} />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Image Gallery Modal */}
+      {showGallery && (
+        <ImageGalleryModal images={product.images} onClose={() => setShowGallery(false)} />
+      )}
     </div>
   )
 }
